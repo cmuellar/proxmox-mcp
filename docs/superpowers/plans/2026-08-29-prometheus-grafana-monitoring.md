@@ -21,6 +21,33 @@ Containern laufen. **Task 10 (`monitoring-mcp`) muss entsprechend
 `GRAFANA_URL=http://10.1.0.123:3000` verwenden** (LXC 107s IP), nicht die
 IP von LXC 105.
 
+**Push-Benachrichtigungen nutzen jetzt auch Namen statt roher IDs (auf
+Wunsch von cmuellar):** Zwei Änderungen zusammen:
+1. Prometheus-Alarmregeln (`HohesRAM`, `HohesRAM-VM`) bekamen eine
+   zusätzliche Annotation `percent` (nur die Zahl, kein Fließtext) — die
+   bisherigen `summary`/`description`-Annotationen bleiben für
+   Alertmanager/Grafana-Alerting unverändert bestehen.
+2. Die HA-Automation bekam einen `variables`-Block mit zwei festen Dicts
+   (`proxmox_namen`: id → Anzeigename, identisch zur Grafana-Zuordnung;
+   `proxmox_alertnamen`: Alertname → lesbare Kurzform) und baut Titel/Text
+   jetzt selbst zusammen (`title: "⚠️ 100 · Home Assistant"`,
+   `message: "RAM hoch (93%)"`) statt den von Prometheus vorformatierten
+   Text mit roher ID zu übernehmen. Verifiziert per
+   `ha_get_automation_traces` mit `detailed`-Trace (zeigt die tatsächlich
+   gesendeten `service_data.title`/`message`).
+
+**Dashboard-Farbschwellen an die Alarmregeln angeglichen + Orange ergänzt
+(auf Wunsch von cmuellar):** Die Kachel-Farben im Dashboard waren nach der
+VM-Alarm-Anpassung inkonsistent (Panel-Schwelle fest bei 90% Rot für alle,
+Alarm aber bei 97% für VMs) — `qemu/100` blieb optisch rot, obwohl kein
+Alarm aktiv war. Fix über `fieldConfig.overrides` mit `byName`-Matcher auf
+den Anzeigenamen (NICHT `byRegexp` — der matcht gegen den rohen Feldnamen
+"Value", nicht gegen den per `legendFormat` gesetzten Anzeigenamen, siehe
+`/api/ds/query`-Antwort zur Fehlersuche). Jetzt dreistufig:
+LXCs/Host grün < 75 % / orange 75-90 % / rot ≥ 90 %, VMs grün < 85 % /
+orange 85-97 % / rot ≥ 97 % — Rot fällt bei beiden Typen exakt mit der
+jeweiligen Alarmschwelle zusammen.
+
 **VM-spezifische RAM-Schwelle (auf Wunsch von cmuellar, nach Fertigstellung):**
 Der erste echte Alarm nach Fertigstellung war `qemu/100` (Home Assistant)
 bei ~93 %. Untersucht über `qm guest exec 100 -- free -h` und
