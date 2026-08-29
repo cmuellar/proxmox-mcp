@@ -16,7 +16,9 @@ wikijs_search_pages(query="MCP-Proxmox <sujet>")               # Recherche
 
 ## REGLE ABSOLUE : Vaultwarden comme coffre-fort unique
 
-**Tous les secrets (mots de passe, tokens, API keys) sont centralises dans Vaultwarden** (organisation `SiteCraft`, `https://vault.sitecraft-it.com`).
+**Tous les secrets (mots de passe, tokens, API keys) sont centralises dans Vaultwarden** (self-hosted, `https://vault.muellar.org`, LXC 110 sur `proxmox`).
+
+L'ancienne reference (`vault.sitecraft-it.com`, organisation "SiteCraft") s'est revelee inaccessible/inconnue de l'utilisateur (2026-08-29) — remplacee par cette instance self-hosted, batie sur une CA interne (`step-ca`, LXC 108) et un reverse proxy (`caddy`, LXC 109). Voir `docs/superpowers/specs/2026-08-29-vaultwarden-design.md` et les specs liees.
 
 - **JAMAIS de secrets en clair** dans CLAUDE.md, MEMORY.md ou le code
 - **Avant chaque tache necessitant un secret** : le recuperer depuis Vaultwarden

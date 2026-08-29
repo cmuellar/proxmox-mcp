@@ -8,6 +8,22 @@
 
 **Tech Stack:** Docker Compose, `vaultwarden/server` (offizielles Image).
 
+## Abweichungen bei der Ausführung (2026-08-29)
+
+- Task 2: Das Admin-Panel liegt unter `/admin` direkt, nicht `/admin/login`
+  (dort antwortet diese Vaultwarden-Version — 1.37.2 — mit 404). `/admin`
+  allein liefert 200 und die Login-Seite als Single-Page-App.
+- Task 5: Ein Registrierungsversuch bei `SIGNUPS_ALLOWED=false` liefert
+  `404 Not Found` statt einer erklärenden Fehlermeldung wie
+  `"Signups are not allowed"` — der Registrierungs-Endpunkt scheint bei
+  gesperrter Registrierung serverseitig gar nicht erst gemountet zu werden.
+  Bestätigt trotzdem zuverlässig: kein Account wird angelegt.
+- Alle übrigen Schritte liefen wie geplant, inkl. WebSocket, Caddy-Umstellung
+  und Backup-Block-Platzierung (Zeilennummer 141 statt der im Plan als
+  Beispiel genannten 127, da der step-ca-Block aus dem Vorprojekt die
+  Zeilen bereits verschoben hatte — wie im Plan selbst vorgesehen, per
+  `grep` neu ermittelt statt die alte Zahl blind zu übernehmen).
+
 ## Global Constraints
 
 - Proxmox-Node: `proxmox`. Storage: `local-lvm`. Bridge: `vmbr0`. Template: `local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst`.
