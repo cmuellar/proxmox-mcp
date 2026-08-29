@@ -21,6 +21,15 @@ Containern laufen. **Task 10 (`monitoring-mcp`) muss entsprechend
 `GRAFANA_URL=http://10.1.0.123:3000` verwenden** (LXC 107s IP), nicht die
 IP von LXC 105.
 
+**Namen statt roher IDs (auf Wunsch von cmuellar, nach Fertigstellung):**
+Die Template-Variable `target` wurde von `type: query` auf `type: custom`
+umgestellt mit festen `Text : Wert`-Paaren (z.B.
+`101 · ha-mcp : lxc/101`) — Panel-Titel nutzen `${target:text}` (zeigt den
+Namen), die PromQL-Filter weiterhin `$target` (nutzt die rohe ID). Tradeoff:
+neue VMs/LXCs erscheinen nicht automatisch, die Zuordnung muss von Hand
+ergänzt werden (bewusst in Kauf genommen für lesbare Namen statt
+automatischer Vollständigkeit).
+
 **Zwei Bugs im Dashboard, gefunden erst durch echten Blick im Browser (Task 8):**
 Panel-Anzahl per API zu prüfen reichte nicht — beide Fehler waren nur im
 gerenderten Dashboard sichtbar, nicht in der JSON-Struktur:
