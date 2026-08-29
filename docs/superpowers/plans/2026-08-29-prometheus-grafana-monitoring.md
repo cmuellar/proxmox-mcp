@@ -21,6 +21,18 @@ Containern laufen. **Task 10 (`monitoring-mcp`) muss entsprechend
 `GRAFANA_URL=http://10.1.0.123:3000` verwenden** (LXC 107s IP), nicht die
 IP von LXC 105.
 
+**VM-spezifische RAM-Schwelle (auf Wunsch von cmuellar, nach Fertigstellung):**
+Der erste echte Alarm nach Fertigstellung war `qemu/100` (Home Assistant)
+bei ~93 %. Untersucht über `qm guest exec 100 -- free -h` und
+`pvesh get /nodes/proxmox/qemu/100/status/current` (Felder
+`pressurememoryfull`/`pressurememorysome`, beide `0`): kein echter
+Speicherengpass, sondern `pve_memory_usage_bytes` zählt bei VMs den Linux-
+Dateisystem-Cache mit (`maxmem - freemem`, nicht `- available`) — bei LXCs
+ist der Wert direkt aus dem Cgroup und damit belastbarer. Fix: eigene Regel
+`HohesRAM-VM` nur für `id=~"qemu/.*"` mit 97 % / 30 Min. statt 90 % / 5 Min.,
+`HohesRAM` (LXCs + Host) bleibt bei 90 % / 5 Min., beide über
+`id=~"(lxc|node)/.*"` bzw. `id=~"qemu/.*"` sauber getrennt.
+
 **Namen statt roher IDs (auf Wunsch von cmuellar, nach Fertigstellung):**
 Die Template-Variable `target` wurde von `type: query` auf `type: custom`
 umgestellt mit festen `Text : Wert`-Paaren (z.B.
