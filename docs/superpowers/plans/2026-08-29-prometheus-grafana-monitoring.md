@@ -8,6 +8,42 @@
 
 **Tech Stack:** Docker Compose, Prometheus, Alertmanager, `prometheus-pve-exporter` (Docker-Image `prompve/prometheus-pve-exporter`), Grafana, `mcp-grafana` (Grafana Labs), Home Assistant (Automation-Update über den `homeassistant`-MCP).
 
+## Abweichungen bei der Ausführung (2026-08-29)
+
+**Architekturänderung (auf Wunsch von cmuellar, nach Task 8):** Grafana läuft
+NICHT im `monitoring`-Compose-Stack (LXC 105) mit, sondern in einer eigenen
+neuen LXC **107** (`grafana`), analog zum bestehenden 1-Dienst-pro-LXC-Muster
+(wie `paperless`/`paperless-mcp` getrennt sind). LXC 105 enthält damit nur
+noch `pve-exporter` + Prometheus + Alertmanager. Grafanas Prometheus-Datasource
+zeigt auf die IP von LXC 105 (`http://10.1.0.133:9090`) statt auf den
+internen Compose-Netzwerknamen `prometheus`, da beide jetzt in getrennten
+Containern laufen. **Task 10 (`monitoring-mcp`) muss entsprechend
+`GRAFANA_URL=http://10.1.0.123:3000` verwenden** (LXC 107s IP), nicht die
+IP von LXC 105.
+
+Bei Task 6 festgestellt: `notify.cm_iphone17p` als **Service-Name** existiert
+nicht (mehr) — korrekt ist der Service `notify.send_message` mit
+`target: {entity_id: notify.cm_iphone17p}`. Zusätzlich akzeptiert
+`notify.send_message` **kein** verschachteltes `data.data.push.*`-Feld (die
+`interruption-level`-Option aus den älteren `notify.<target>`-Diensten) —
+führt zu `extra keys not allowed @ data['data']`. Fix: nur `title`/`message`
+im `data`-Block, keine Push-Zusatzoptionen. Über drei Testalarme
+(`MonitoringTest`/`2`/`3`/`4`) end-to-end verifiziert, mit `ha_get_automation_traces`
+den tatsächlichen Ausführungsfehler gefunden statt nur `last_triggered` zu
+prüfen (das aktualisiert sich auch bei einem Automation-Lauf, der intern
+mit Fehler abbricht).
+
+Bei Task 3 festgestellt: `prometheus-pve-exporter` liefert **keine
+Swap-Metriken** (Proxmox' Cluster-Resources-API, auf der der Exporter
+aufbaut, gibt Swap nicht her — nur `pve_cpu_usage_ratio`,
+`pve_memory_usage_bytes`/`_size_bytes`, `pve_disk_*`, `pve_up`,
+`pve_uptime_seconds` u.a.). Mit cmuellar abgestimmt: Swap-Regel
+(`HohesSwap`) und Swap-Panels entfallen für Phase 1, RAM-Überwachung bleibt
+wie geplant. Zweite Abweichung: Der Proxmox-Hostname `proxmox` ist aus den
+Containern heraus nicht auflösbar — der Exporter braucht als `target` die
+tatsächliche IP `10.1.0.20` (Bridge `vmbr0` auf dem Host), nicht den
+Hostnamen.
+
 ## Global Constraints
 
 - Proxmox-Node: `proxmox`. Storage-Pool für Root-FS: `local-lvm`. Netzwerk-Bridge: `vmbr0`. LXC-Template: `local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst`.
