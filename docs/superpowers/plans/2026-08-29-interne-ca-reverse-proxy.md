@@ -8,6 +8,37 @@
 
 **Tech Stack:** Docker Compose, `smallstep/step-ca`, `caddy` (offizielles Image), UniFi-Network-API (DNS), Python 3 (`.mobileconfig`-Erstellung via `plistlib`).
 
+## Abweichungen bei der Ausführung (2026-08-29)
+
+Bei Task 2 festgestellt:
+1. **Rechteproblem beim ersten Start:** `smallstep/step-ca` läuft intern
+   als nicht-root User `step` (UID/GID 1000), das per Bind-Mount
+   eingehängte `./data`-Verzeichnis gehörte aber `root` (Standard beim
+   Anlegen durch `mkdir` auf dem LXC-Host) → `Permission denied` beim
+   Schreiben des Passworts. Fix: `chown -R 1000:1000 /opt/step-ca/data`
+   vor dem ersten `docker compose up -d` (als zusätzlicher Schritt in
+   Task 1 nach dem `mkdir -p /opt/step-ca/data`).
+2. **Provisioner-Name:** `DOCKER_STEPCA_INIT_PROVISIONER_NAME=acme`
+   benennt nur den Standard-JWK-Provisioner (für administrative
+   `step`-CLI-Operationen); `DOCKER_STEPCA_INIT_ACME=true` legt einen
+   ZWEITEN, separaten Provisioner vom Typ ACME an, der bei Namenskollision
+   automatisch `acme-1` heißt. Die tatsächliche ACME-Directory-URL ist
+   also `https://ca.muellar.org/acme/acme-1/directory`, nicht
+   `/acme/acme/directory` wie in Spec und Plan ursprünglich angenommen —
+   überall entsprechend ersetzt (Caddyfile in Task 5/6, Verifikationen).
+
+Bei Task 5 festgestellt: Caddy nutzt für die Challenge standardmäßig
+**tls-alpn-01** (über Port 443 selbst), nicht http-01 über Port 80 wie im
+Plan angenommen — Port 80 war für den erfolgreichen Zertifikatsbezug gar
+nicht nötig, blieb aber trotzdem offen (schadet nicht, für spätere
+HTTP→HTTPS-Redirects ohnehin sinnvoll). Der erste Bezugsversuch (Task 5,
+noch mit IP statt DNS-Namen) schlug mit
+`"The server could not connect to validation target"` fehl — erwartungsgemäß,
+da `step-ca` den zu prüfenden Namen `vault.muellar.org` selbst auflösen
+können muss, was erst nach den DNS-Einträgen aus Task 6 funktionierte.
+Nach Task 6 lief der Bezug beim ersten Versuch durch
+(`certificate obtained successfully`).
+
 ## Global Constraints
 
 - Proxmox-Node: `proxmox`. Storage: `local-lvm`. Bridge: `vmbr0`. Template: `local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst`.
