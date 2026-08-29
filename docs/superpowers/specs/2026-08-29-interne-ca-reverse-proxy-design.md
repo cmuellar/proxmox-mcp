@@ -99,15 +99,36 @@ besser.
 
 ### Root-Zertifikat verteilen
 
-`step ca root` exportiert das Root-Zertifikat als `.crt`-Datei. Diese Datei
-reiche ich cmuellar weiter — der eigentliche Import in den
-Windows-Zertifikatsspeicher (`certmgr.msc` → Vertrauenswürdige
-Stammzertifizierungsstellen) bleibt bewusst cmuellars eigener Schritt,
-analog zur Vaultwarden-Regel: keine Eingaben in Sicherheits-relevante
-Systemdialoge durch mich selbst (siehe Memory
-`feedback-vaultwarden-keine-eingabe`). Nach dem Import zeigen Browser für
-jeden künftigen `*.muellar.org`-Dienst hinter Caddy ein normales
-Schloss-Symbol ohne Warnung.
+`step ca root` exportiert das Root-Zertifikat als `.crt`-Datei. Zwei Wege,
+je nach Gerätetyp im Haushalt Müllar (Windows-PCs, iOS/iPadOS/Apple):
+
+- **Windows:** Die `.crt`-Datei reiche ich cmuellar weiter — der
+  eigentliche Import in den Windows-Zertifikatsspeicher (`certmgr.msc` →
+  Vertrauenswürdige Stammzertifizierungsstellen, Speicherort "Lokaler
+  Computer") bleibt bewusst cmuellars eigener Schritt, analog zur
+  Vaultwarden-Regel: keine Eingaben in Sicherheits-relevante
+  Systemdialoge durch mich selbst (siehe Memory
+  `feedback-vaultwarden-keine-eingabe`). Kein realistischer
+  automatischer Weg ohne Active-Directory/Intune — für den Zweck nicht
+  gerechtfertigt.
+- **iOS/iPadOS/macOS:** Ein einzelnes `.mobileconfig`-Konfigurationsprofil
+  mit dem Root-Zertifikat, das ich baue und cmuellar zum Verteilen an
+  alle Apple-Geräte gebe (z.B. per AirDrop oder Abruf über eine interne
+  URL wie `http://ca.muellar.org/root.mobileconfig`). Reduziert die
+  Installation auf einen Tap ("Profil installieren") pro Gerät statt des
+  vollen manuellen Imports. Ein Apple-seitiger Schritt bleibt aber
+  zwingend bestehen und ist nicht automatisierbar ohne echtes MDM: nach
+  der Profil-Installation muss unter Einstellungen → Allgemein → Info →
+  Zertifikatsvertrauenseinstellungen manuell "Volles Vertrauen" für das
+  Zertifikat aktiviert werden (Apple-Sicherheitsvorgabe, kein
+  Caddy/step-ca-Detail). Vollautomatisches Verteilen ohne jeden
+  Geräte-Touch würde eine echte MDM-Lösung brauchen (z.B. Mosyle/Jamf) —
+  für eine Handvoll Familiengeräte bewusst nicht vorgesehen, eigenes
+  größeres Vorhaben.
+
+Nach beiden Wegen zeigen Browser für jeden künftigen
+`*.muellar.org`-Dienst hinter Caddy ein normales Schloss-Symbol ohne
+Warnung.
 
 ### Secrets
 
@@ -146,6 +167,10 @@ Paperless. Details zur genauen Integration in
 - Root-Zertifikat-Vertrauen: nach Import in Windows —
   `https://vault.muellar.org` (oder testweise ein anderer konfigurierter
   Name) zeigt ein normales Schloss-Symbol im Browser, keine Warnung
+- Root-Zertifikat-Vertrauen auf Apple-Geräten: nach Installation des
+  `.mobileconfig`-Profils UND Aktivieren von "Volles Vertrauen" unter
+  Zertifikatsvertrauenseinstellungen — derselbe Test in Safari auf einem
+  iOS/iPadOS-Gerät
 
 ## Out of scope
 
