@@ -21,6 +21,20 @@ Containern laufen. **Task 10 (`monitoring-mcp`) muss entsprechend
 `GRAFANA_URL=http://10.1.0.123:3000` verwenden** (LXC 107s IP), nicht die
 IP von LXC 105.
 
+**Zwei Bugs im Dashboard, gefunden erst durch echten Blick im Browser (Task 8):**
+Panel-Anzahl per API zu prüfen reichte nicht — beide Fehler waren nur im
+gerenderten Dashboard sichtbar, nicht in der JSON-Struktur:
+1. Template-Variable `target` stand auf `multi: false, includeAll: false`.
+   Grafanas Panel-Repeat braucht aber alle Werte gleichzeitig ausgewählt,
+   sonst wird nur eine einzige Kachel (der zufällig erste Wert) wiederholt
+   statt einer pro Ziel. Fix: `multi: true, includeAll: true`,
+   `current: {text: "All", value: "$__all"}`.
+2. Die Variable nutzte `label_values(pve_up, id)` — das liefert zusätzlich
+   `storage/proxmox/local` und `storage/proxmox/local-lvm` als IDs, die aber
+   keine RAM-Metrik haben (leere Kacheln). Fix:
+   `label_values(pve_memory_size_bytes, id)`, liefert nur die 9 echten
+   Compute-Ziele (100–107 + Host).
+
 Bei Task 6 festgestellt: `notify.cm_iphone17p` als **Service-Name** existiert
 nicht (mehr) — korrekt ist der Service `notify.send_message` mit
 `target: {entity_id: notify.cm_iphone17p}`. Zusätzlich akzeptiert
